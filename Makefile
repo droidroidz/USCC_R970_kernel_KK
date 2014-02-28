@@ -193,7 +193,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
-CROSS_COMPILE	?= /home/kgf/Android/_TOOLCHAINS/arm-linux-androideabi-4.7/bin/arm-linux-androideabi-
+CROSS_COMPILE	?= /home/kgf/Android/_TOOLCHAINS/android-toolchain-eabi-linaro-14.2013/bin/arm-linux-androideabi-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -245,8 +245,10 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCXXFLAGS = -O2
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -ftree-vectorize -fomit-frame-pointer
+HOSTCXXFLAGS = -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mcpu=cortex-a15 -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad
+#HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+#HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -352,11 +354,16 @@ CC		= $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   =
-AFLAGS_MODULE   =
+
+MODFLAGS	= -DMODULE -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mcpu=cortex-a15 -mtune=cortex-a15 -fno-pic -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad
+#MODFLAGS	 = -DMODULE -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -fno-pic -marm -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad
+CFLAGS_MODULE   = $(MODFLAGS)
+AFLAGS_MODULE   = $(MODFLAGS)
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	=
-AFLAGS_KERNEL	=
+CFLAGS_KERNEL	= -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 -funswitch-loops -mvectorize-with-neon-quad
+#CFLAGS_KERNEL	= -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -marm -mfpu=neon-vfpv4 -funswitch-loops -ftree-vectorize -mvectorize-with-neon-quad
+AFLAGS_KERNEL	= -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 -funswitch-loops -mvectorize-with-neon-quad
+#AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -367,18 +374,25 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include $(srctree)/include/linux/kconfig.h
 
-KBUILD_CPPFLAGS := -D__KERNEL__
+KBUILD_CPPFLAGS := -D__KERNEL__ -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mcpu=cortex-a15 -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad
+#KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks
-KBUILD_AFLAGS_KERNEL :=
-KBUILD_CFLAGS_KERNEL :=
+		   -Wno-format-security -Wno-unused-function -Wno-array-bounds -Wno-uninitialized \
+		   -fno-delete-null-pointer-checks -Wno-unused-variable -Wno-maybe-uninitialized -Wno-cpp -Wno-declaration-after-statement \
+		   -mcpu=cortex-a15 -mtune=cortex-a15 \
+		   -fpredictive-commoning -fgcse-after-reload -ftree-vectorize \
+		   -fipa-cp-clone -fsingle-precision-constant -pipe \
+		   -funswitch-loops
+KBUILD_AFLAGS_KERNEL := -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mcpu=cortex-a15 -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad
+KBUILD_CFLAGS_KERNEL := -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mcpu=cortex-a15 -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad
+#KBUILD_AFLAGS_KERNEL :=
+#KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE
+KBUILD_CFLAGS_MODULE  := -DMODULE -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize -funswitch-loops -Wno-cpp
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
@@ -566,7 +580,8 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
-KBUILD_CFLAGS	+= -O2
+KBUILD_CFLAGS += -O3 $(call cc-disable-warning,maybe-uninitialized,)
+#KBUILD_CFLAGS	+= -O2
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
@@ -584,18 +599,18 @@ endif
 # Use make W=1 to enable this warning (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 
-ifdef CONFIG_FRAME_POINTER
-KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
-else
+# ifdef CONFIG_FRAME_POINTER
+# KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
+# else
 # Some targets (ARM with Thumb2, for example), can't be built with frame
 # pointers.  For those, we don't have FUNCTION_TRACER automatically
 # select FRAME_POINTER.  However, FUNCTION_TRACER adds -pg, and this is
 # incompatible with -fomit-frame-pointer with current GCC, so we don't use
 # -fomit-frame-pointer with FUNCTION_TRACER.
-ifndef CONFIG_FUNCTION_TRACER
+# ifndef CONFIG_FUNCTION_TRACER
 KBUILD_CFLAGS	+= -fomit-frame-pointer
-endif
-endif
+# endif
+# endif
 
 ifdef CONFIG_DEBUG_INFO
 KBUILD_CFLAGS	+= -g
@@ -647,16 +662,14 @@ endif
 
 #Disable the whole of the following block to disable L1 TIMA
 #ifeq ($(TIMA_ENABLED),1)
-#      KBUILD_CFLAGS += 	-DTIMA_ENABLED \
-			-DTIMA_PGD_FREE_MANAGE -DTIMA_COPY_PMD_MANAGE \
-			-DTIMA_PMD_CLEAR_MANAGE -DTIMA_KERNEL_L1_MANAGE \
-			-DTIMA_L2_MANAGE -DTIMA_L2_GROUP \
-			-DTIMA_DEBUG_INFRA -DTIMA_INIT_SEC_MON
-#       KBUILD_AFLAGS += -DTIMA_ENABLED \
-			-DTIMA_PGD_FREE_MANAGE -DTIMA_COPY_PMD_MANAGE \
-			-DTIMA_PMD_CLEAR_MANAGE -DTIMA_KERNEL_L1_MANAGE \
-			-DTIMA_L2_MANAGE -DTIMA_L2_GROUP \
-			-DTIMA_DEBUG_INFRA -DTIMA_INIT_SEC_MON
+#      KBUILD_CFLAGS += -DTIMA_ENABLED \
+#						-DTIMA_PGD_FREE_MANAGE -DTIMA_COPY_PMD_MANAGE -DTIMA_PMD_CLEAR_MANAGE \
+#						-DTIMA_KERNEL_L1_MANAGE \
+#						-DTIMA_DEBUG_INFRA -DTIMA_INIT_SEC_MON
+ #      KBUILD_AFLAGS += -DTIMA_ENABLED \
+#						-DTIMA_PGD_FREE_MANAGE -DTIMA_COPY_PMD_MANAGE -DTIMA_PMD_CLEAR_MANAGE \
+#						-DTIMA_KERNEL_L1_MANAGE \
+#						-DTIMA_DEBUG_INFRA -DTIMA_INIT_SEC_MON
 #endif
 
 #Disable the whole of the following block to disable LKM AUTH
